@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="D:/Projects/To Do List/backend/API/API.csproj" Id="cdd2945c-7c28-4167-9650-3cab4fa12665" />
+  <Project Path="D:/Projects/To Do List/backend/Application/Application.csproj" />
+  <Project Path="D:/Projects/To Do List/backend/Domain/Domain.csproj" />
+  <Project Path="D:/Projects/To Do List/backend/Infrastructure/Infrastructure.csproj" />
+</Solution>
