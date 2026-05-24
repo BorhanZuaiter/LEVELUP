@@ -101,8 +101,12 @@ if (app.Environment.IsDevelopment())
         options.RoutePrefix = string.Empty; // Serve Swagger UI at the root
     });
 }
+else
+{
+    // Only redirect to HTTPS in production
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

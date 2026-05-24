@@ -16,6 +16,8 @@ public class User
     public DateTime? RefreshTokenExpiry { get; set; }
     public int Level { get; set; } = 1;
     public int XP { get; set; } = 0;
+    public int DailyXP { get; set; } = 0;
+    public DateTime LastXPResetDate { get; set; } = DateTime.UtcNow;
     public int CurrentHP { get; set; } = 100;
     public int MaxHP { get; set; } = 100;
     public int CurrentStreak { get; set; } = 0;
