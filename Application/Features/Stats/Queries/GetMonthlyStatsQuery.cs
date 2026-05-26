@@ -24,7 +24,7 @@ public class GetMonthlyStatsQueryHandler : IRequestHandler<GetMonthlyStatsQuery,
     {
         var tasks = await _taskRepository.GetByUserIdAsync(request.UserId);
 
-        var currentMonth = DateTime.UtcNow.AddMonths(-1);
+        var currentMonth = DateTime.UtcNow;
         var completedThisMonth = tasks
             .Where(t => t.TaskStatus == Domain.Enums.TaskStatus.Completed &&
                    t.CompletedAt.HasValue &&
