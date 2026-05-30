@@ -34,4 +34,14 @@ public class StatsRepository : IStatsRepository
         _context.Stats.Update(stats);
         await _context.SaveChangesAsync();
     }
+
+    public async global::System.Threading.Tasks.Task DeleteAsync(Guid id)
+    {
+        var stats = await _context.Stats.FirstOrDefaultAsync(s => s.Id == id);
+        if (stats != null)
+        {
+            _context.Stats.Remove(stats);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

@@ -113,6 +113,10 @@ public class CompleteTaskCommandHandler : IRequestHandler<CompleteTaskCommand, R
                 };
             }
 
+            // Ensure stats is not null (it should never be at this point)
+            if (stats == null)
+                return Result.Failure("Failed to initialize user stats");
+
             // Increment relevant stat based on task category (max +1 per task, cap at 20 per day managed by frontend)
             switch (task.StatCategory)
             {

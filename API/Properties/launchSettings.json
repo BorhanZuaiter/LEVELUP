@@ -1,6 +1,9 @@
 ﻿{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
+    "default": {
+      "commandName": "Project"
+    },
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,

@@ -8,6 +8,7 @@ using Infrastructure.Services;
 using Infrastructure.Services.Email;
 using Infrastructure.Services.Progression;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Domain.Interfaces.User;
@@ -18,6 +19,7 @@ using Domain.Interfaces.Notification;
 using Application.Common.Interfaces.Stats;
 using MediatR;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +29,18 @@ builder.Services.AddDbContext<LevelUpDbContext>(options =>
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
+
+// Get JWT secret from environment variable or user-secrets (never from config files)
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY")
+    ?? builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("JWT_SECRET_KEY environment variable or user-secret not configured. Set with: dotnet user-secrets set 'Jwt:SecretKey' 'your-secret-key' (min 32 chars)");
+
+// Validate secret key length (minimum 256 bits = 32 characters)
+if (secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT_SECRET_KEY must be at least 32 characters long for security");
+}
+
 var signingKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(secretKey));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -81,12 +94,40 @@ builder.Services.AddScoped<IReminderService, ReminderService>();
 builder.Services.AddControllers();
 builder.Services.AddAuthorization();
 
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    // Stricter limits for auth endpoints (prevent brute force) - 5 requests per minute per IP
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    // Global rate limit - 100 requests per minute
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1)
+            }
+        )
+    );
+
+    // Return 429 Too Many Requests when rate limit exceeded
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+
 // Add Swagger/Swashbuckle
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Use middlewares
+app.UseRateLimiter();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseMiddleware<JwtMiddleware>();
 
